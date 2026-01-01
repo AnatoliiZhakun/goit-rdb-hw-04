@@ -1,0 +1,156 @@
+CREATE DATABASE IF NOT EXISTS LibraryManagement
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+USE LibraryManagement;
+
+CREATE TABLE authors (
+  author_id INT AUTO_INCREMENT PRIMARY KEY,
+  author_name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE genres (
+  genre_id INT AUTO_INCREMENT PRIMARY KEY,
+  genre_name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE books (
+  book_id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  publication_year YEAR NOT NULL,
+  author_id INT NOT NULL,
+  genre_id INT NOT NULL,
+  FOREIGN KEY (author_id) REFERENCES authors(author_id),
+  FOREIGN KEY (genre_id) REFERENCES genres(genre_id)
+);
+
+CREATE TABLE users (
+  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE borrowed_books (
+  borrow_id INT AUTO_INCREMENT PRIMARY KEY,
+  book_id INT NOT NULL,
+  user_id INT NOT NULL,
+  borrow_date DATE NOT NULL,
+  return_date DATE,
+  FOREIGN KEY (book_id) REFERENCES books(book_id),
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+USE LibraryManagement;
+
+INSERT INTO authors (author_name)
+VALUES ('Джо Аберкромбі'), ('Брендон Сандерсон');
+
+INSERT INTO genres (genre_name)
+VALUES ('Темне Фентезі'), ('Епічне Фентезі');
+
+INSERT INTO books (title, publication_year, author_id, genre_id)
+VALUES
+  ('Перший закон', 2020, 1, 1),
+  ('Тресс зі смарагдового моря', 2024, 2, 2);
+
+INSERT INTO users (username, email)
+VALUES
+  ('anatolii', 'anatolii@example.com'),
+  ('olena', 'olena@example.com');
+
+INSERT INTO borrowed_books (book_id, user_id, borrow_date, return_date)
+VALUES
+  (1, 1, '2025-12-20', NULL),
+  (2, 2, '2025-12-10', '2025-12-25');
+
+CREATE TABLE orders_full_join AS
+SELECT
+  od.id            AS order_detail_id,
+  o.id             AS order_id,
+  o.date           AS order_date,
+
+  c.id             AS customer_id,
+  c.name           AS customer_name,
+
+  e.employee_id    AS employee_id,
+  e.first_name     AS employee_first_name,
+  e.last_name      AS employee_last_name,
+
+  s.id             AS shipper_id,
+  s.name           AS shipper_name,
+
+  p.id             AS product_id,
+  p.name           AS product_name,
+  p.unit           AS product_unit,
+  p.price          AS product_price,
+
+  cat.id           AS category_id,
+  cat.name         AS category_name,
+
+  sup.id           AS supplier_id,
+  sup.name         AS supplier_name,
+
+  od.quantity      AS quantity,
+  (od.quantity * p.price) AS line_total
+FROM order_details od
+INNER JOIN orders o        ON o.id = od.order_id
+INNER JOIN customers c     ON c.id = o.customer_id
+INNER JOIN employees e     ON e.employee_id = o.employee_id
+INNER JOIN shippers s      ON s.id = o.shipper_id
+INNER JOIN products p      ON p.id = od.product_id
+INNER JOIN categories cat  ON cat.id = p.category_id
+INNER JOIN suppliers sup   ON sup.id = p.supplier_id;
+
+
+SELECT COUNT(*) AS total_rows
+FROM orders_full_join
+
+518
+
+SELECT COUNT(*) AS total_rows_left
+FROM orders_full_join od
+LEFT JOIN orders o        ON o.id = od.order_id
+LEFT JOIN customers c     ON c.id = o.customer_id
+LEFT JOIN employees e     ON e.employee_id = o.employee_id
+LEFT JOIN shippers s      ON s.id = o.shipper_id
+LEFT JOIN products p      ON p.id = od.product_id
+LEFT JOIN categories cat  ON cat.id = p.category_id
+LEFT JOIN suppliers sup   ON sup.id = p.supplier_id;
+
+518
+
+SELECT *
+FROM orders_full_join
+WHERE employee_id > 3 AND employee_id <= 10;
+
+SELECT
+  category_name,
+  COUNT(*) AS rows_count,
+  AVG(quantity) AS avg_quantity
+FROM orders_full_join
+GROUP BY category_name;
+
+SELECT
+  category_name,
+  COUNT(*) AS rows_count,
+  AVG(quantity) AS avg_quantity
+FROM orders_full_join
+GROUP BY category_name
+HAVING AVG(quantity) > 21;
+
+SELECT
+  category_name,
+  COUNT(*) AS rows_count
+FROM orders_full_join
+GROUP BY category_name
+ORDER BY rows_count DESC;
+
+SELECT
+  category_name,
+  COUNT(*) AS rows_count
+FROM orders_full_join
+GROUP BY category_name
+ORDER BY rows_count DESC
+LIMIT 4 OFFSET 1;
+
+
